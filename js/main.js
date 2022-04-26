@@ -30,41 +30,116 @@ const game = {
       ['o', 'x', 'o'],
       ['o', 'x', 'o'],
       ['x', 'x', 'o'],
+    ],
+    rotationIndex: 0,
+    rotation: [
+      [
+        ['o', 'x', 'o'],
+        ['o', 'x', 'o'],
+        ['x', 'x', 'o'],
+      ],
+      [
+        ['x', 'o', 'o'],
+        ['x', 'x', 'x'],
+        ['o', 'o', 'o'],
+      ],
+      [
+        ['o', 'x', 'x'],
+        ['o', 'x', 'o'],
+        ['o', 'x', 'o'],
+      ],
+      [
+        ['o', 'o', 'o'],
+        ['x', 'x', 'x'],
+        ['o', 'o', 'x'],
+      ]
     ]
   },
 
   moveLeft() {
-    this.activeTetromino.x -= 1;
+    if (this.checkOutPosition(this.activeTetromino.x - 1, this.activeTetromino.y)) {
+      this.activeTetromino.x -= 1;
+    }
   },
 
   moveRight() {
-    this.activeTetromino.x += 1;
+    if (this.checkOutPosition(this.activeTetromino.x + 1, this.activeTetromino.y)) {
+      this.activeTetromino.x += 1;
+    }
   },
 
   moveDown() {
-    this.activeTetromino.y += 1;
+    if (this.checkOutPosition(this.activeTetromino.x, this.activeTetromino.y + 1)) {
+      this.activeTetromino.y += 1;
+    } else {
+      this.stopMove();
+    }
   },
 
   rotateTetromino() {
+    this.activeTetromino.rotationIndex = this.activeTetromino.rotationIndex < 3 ?
+      this.activeTetromino.rotationIndex + 1 : 0;
 
+    this.activeTetromino.block =
+      this.activeTetromino.rotation[this.activeTetromino.rotationIndex];
+
+    if (!this.checkOutPosition(this.activeTetromino.x, this.activeTetromino.y)) {
+      this.activeTetromino.rotationIndex = this.activeTetromino.rotationIndex > 0 ?
+        this.activeTetromino.rotationIndex - 1 : 3;
+
+      this.activeTetromino.block =
+        this.activeTetromino.rotation[this.activeTetromino.rotationIndex];
+    }
   },
 
   get viewArea() {
     const area = JSON.parse(JSON.stringify(this.area));
 
-    const { x, y, block } = this.activeTetromino;
+    const { x, y, block: tetramino } = this.activeTetromino;
 
-    for (let i = 0; i < block.length; i++) {
-      const row = block[i];
+    for (let i = 0; i < tetramino.length; i++) {
+      const row = tetramino[i];
 
       for (let j = 0; j < row.length; j++) {
         if (row[j] === 'x') {
-          area[y + i][x + j] = block[i][j];
+          area[y + i][x + j] = tetramino[i][j];
         }
       }
     }
 
     return area;
+  },
+
+  checkOutPosition(x, y) {
+    const tetramino = this.activeTetromino.block;
+
+    for (let i = 0; i < tetramino.length; i++) {
+      for (let j = 0; j < tetramino[i].length; j++) {
+        if (tetramino[i][j] === 'o') continue;
+
+        if (!this.area[y + i] ||
+          !this.area[y + i][x + j] ||
+          this.area[y + i][x + j] === 'x') {
+          return false;
+        }
+      }
+
+    }
+    return true
+  },
+
+  stopMove() {
+    const {x,y, block: tetramino} = this.activeTetromino;
+
+    for (let i = 0; i < tetramino.length; i++) {
+      const row = tetramino[i];
+
+      for (let j = 0; j < row.length; j++) {
+        if (row[j] === 'x') {
+          this.area[y + i][x + j] = tetramino[i][j];
+        }
+      }
+    }
   }
 };
 
@@ -81,6 +156,8 @@ canvas.height = SIZE_BLOCK * 20;
 const context = canvas.getContext('2d')
 
 const showArea = (area) => {
+  context.clearRect(0, 0, canvas.width, canvas.height);
+
   for (let y = 0; y < area.length; y++) {
     const line = area[y];
 
@@ -97,5 +174,27 @@ const showArea = (area) => {
   }
 
 };
+
+window.addEventListener('keydown', event => {
+  const key = event.code;
+
+  switch (key) {
+    case 'ArrowLeft': game.moveLeft();
+      showArea(game.viewArea)
+      break;
+
+    case 'ArrowRight': game.moveRight();
+      showArea(game.viewArea)
+      break;
+
+    case 'ArrowDown': game.moveDown();
+      showArea(game.viewArea)
+      break;
+
+    case 'ArrowUp': game.rotateTetromino();
+      showArea(game.viewArea)
+      break;
+  }
+})
 
 showArea(game.viewArea);
