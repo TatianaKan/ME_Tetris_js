@@ -16,11 +16,26 @@ export class Controller {
   start() {
     ////отрисовка
     this.view.showArea(this.game.viewArea);
+    const showScore = this.view.createBlockScore();
+    const showNextTetramino = this.view.createBlockNextTetramino();
 
-    setInterval(()=> {
-      this.game.moveDown();
-      this.view.showArea(this.game.viewArea);
-    }, 400)
+    this.game.createUpdatePanels(showScore, showNextTetramino);
+
+    const tick = () => {
+const time = (1100 - 100 * this.game.lvl);
+      if (this.game.gameOver) return;
+
+      setTimeout(() => {
+        this.game.moveDown();
+        this.view.showArea(this.game.viewArea);
+        tick();
+      }, time > 100 ? time : 100);
+    }
+    tick();
+    // setInterval(()=> {
+    //   this.game.moveDown();
+    //   this.view.showArea(this.game.viewArea);
+    // }, 400)
 
     window.addEventListener('keydown', event => {
       const key = event.code;
